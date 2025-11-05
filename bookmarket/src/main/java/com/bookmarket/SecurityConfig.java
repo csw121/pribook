@@ -18,7 +18,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorizeHttpRequests) -> authorizeHttpRequests
                         // [CTO 수정] '도서 상세' 페이지 주소("/book/detail/**")를 '허용 목록'에 추가합니다.
                         // (/**: '/detail/' 뒤에 1이 오든 2가 오든 '모두' 허용한다는 뜻)
-                        .requestMatchers("/", "/member/login", "/member/signup", "/book/search", "/book/detail/**").permitAll()
+                        .requestMatchers("/", "/member/login", "/member/signup", "/book/search", "/book/detail/**","**").permitAll()
                         .requestMatchers("/**.css", "/**.js").permitAll()
 
                         // '그리고' 그 외 모든 요청을 '마지막'에 막습니다.

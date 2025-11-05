@@ -5,23 +5,22 @@
     <title>검색 결과 - PriBook</title>
 </head>
 <body>
-<h1>"[[${keyword}]]" (으)로 검색한 결과입니다.</h1>
+<h1 th:if="${keyword}">"[[${keyword}]]" (으)로 검색한 결과입니다.</h1>
+<h1 th:unless="${keyword}">검색어를 입력해 주세요.</h1>
+
 <hr>
 
 <a th:href="@{/}">메인으로 돌아가기</a>
 
 <div th:each="book : ${bookList}">
-
     <a th:href="@{|/book/detail/${book.id}|}">
         <h3 th:text="${book.title}">책 제목</h3>
     </a>
-
     <p>
         <span th:text="${book.author}">저자</span> |
         <span th:text="${book.publisher}">출판사</span> |
         <span th:text="${book.price}">가격</span> 원
-    </p>
-    <hr>
+    </p> <hr>
 </div>
 
 <div th:if="${bookList.isEmpty()}">

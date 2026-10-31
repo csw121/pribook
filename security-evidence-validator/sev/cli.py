@@ -20,10 +20,16 @@ def parser():
         else:s.add_argument('--verification',default='output/verification.json')
         if name=='report':s.add_argument('--output-dir',default='output/report');s.add_argument('--docx',action='store_true')
     s=sub.add_parser('document-analyze');s.add_argument('--input',required=True);s.add_argument('--output',default='output/document_structure.json');s.add_argument('--include-local-text',action='store_true')
+    t=sub.add_parser('ai-text');t.add_argument('--input',required=True);t.add_argument('--settings',default='config/settings.json');t.add_argument('--encoding',choices=['utf-8-sig','utf-16','cp949'],default='utf-8-sig');t.add_argument('--output',default='output/text_review.json');t.add_argument('--markdown',default='output/text_review.md')
     s=sub.add_parser('serve');s.add_argument('--port',type=int,default=8765)
     return p
 
 def execute(args):
+    if args.command=='ai-text':
+        from .text_analyzer import analyze_text,render_review
+        result=analyze_text(args.input,read_json(args.settings),args.encoding,progress=lambda current,total: print(f'TXT 분석 중: {current}/{total}',flush=True))
+        write_json(args.output,result);write_text(args.markdown,render_review(result))
+        print(f"TXT {len(result['sources'])}개 / {len(result['reviews'])}개 조각 검토 완료. 결과는 미검증 자료이며 보고서 게이트는 blocked입니다.");return 0
     if args.command=='doctor':
         settings=validate(read_json(args.settings),'settings')
         print('Python '+sys.version.split()[0]+'; jsonschema 설치됨; 대상 HTTP 요청 기능 없음')

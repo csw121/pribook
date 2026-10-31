@@ -1,1 +1,2 @@
+b2fcbafdfb2deafe1a57795845d704dd756a12acb75bf9e1d88b8d742c12e648  Security-Evidence-Validator-1.1.0.zip
 af59a00ecfeef6863fb3f00134a3bfef3ec7992d504423d82a764b70bd67be5c  Security-Evidence-Validator-recovered-1.0.1.zip

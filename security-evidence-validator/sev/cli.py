@@ -27,9 +27,9 @@ def parser():
 def execute(args):
     if args.command=='ai-text':
         from .text_analyzer import analyze_text,render_review
-        result=analyze_text(args.input,read_json(args.settings),args.encoding,progress=lambda current,total: print(f'TXT 분석 중: {current}/{total}',flush=True))
+        result=analyze_text(args.input,read_json(args.settings),args.encoding,progress=lambda current,total: print(f'TXT 분석 중: {current}/{total}',flush=True),notice=lambda message: print(message,flush=True))
         write_json(args.output,result);write_text(args.markdown,render_review(result))
-        print(f"TXT {len(result['sources'])}개 / {len(result['reviews'])}개 조각 검토 완료. 결과는 미검증 자료이며 보고서 게이트는 blocked입니다.");return 0
+        print(f"TXT {len(result['sources'])}개 / {len(result['reviews'])}개 조각 검토 완료 / 인용 미확인 {result['quote_review_count']}건. 결과는 미검증 자료이며 보고서 게이트는 blocked입니다.");return 0
     if args.command=='doctor':
         settings=validate(read_json(args.settings),'settings')
         print('Python '+sys.version.split()[0]+'; jsonschema 설치됨; 대상 HTTP 요청 기능 없음')

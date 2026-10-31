@@ -29,9 +29,13 @@ class TextTests(unittest.TestCase):
         with patch('sev.text_analyzer.local_request',return_value=response()):r=self.analyze()
         self.assertEqual(r['status'],'unverified_text_review');self.assertEqual(r['report_gate'],'blocked');self.assertTrue(r['human_review_required'])
         self.assertEqual(r['reviews'][0]['claims'][0]['character_start'],0)
-    def test_hallucinated_quote_rejected(self):
+    def test_hallucinated_quote_quarantined(self):
         review=copy.deepcopy(REVIEW);review['claims'][0]['quote']='없는 근거 문장'
-        with patch('sev.text_analyzer.local_request',return_value=response(review)):self.assertRaises(SevError,self.analyze)
+        with patch('sev.text_analyzer.local_request',return_value=response(review)) as request:r=self.analyze()
+        self.assertEqual(request.call_count,2);self.assertEqual(r['reviews'][0]['claims'],[])
+        self.assertFalse(r['reviews'][0]['unmatched_claims'][0]['quote_matched'])
+        self.assertNotIn('character_start',r['reviews'][0]['unmatched_claims'][0])
+        self.assertEqual(r['report_gate'],'blocked');self.assertEqual(r['quote_review_count'],1)
     def test_no_confirmed_assessment_allowed(self):
         review=copy.deepcopy(REVIEW);review['claims'][0]['assessment']='confirmed'
         with patch('sev.text_analyzer.local_request',return_value=response(review)):self.assertRaises(SevError,self.analyze)
@@ -45,6 +49,42 @@ class TextTests(unittest.TestCase):
         prompt=request.call_args.args[2]['prompt']
         for secret in ['synthetic-auth','synthetic-cookie','synthetic-pass','synthetic-token']:self.assertNotIn(secret,prompt)
         self.assertIn('[REDACTED]',prompt)
+    def bad_review(self):
+        r=copy.deepcopy(REVIEW);r['claims'][0]['quote']='원문에 없는 인용';return r
+    def test_retry_repairs_exact_quote(self):
+        with patch('sev.text_analyzer.local_request',side_effect=[response(self.bad_review()),response()]) as request:r=self.analyze()
+        self.assertEqual(request.call_count,2);self.assertTrue(r['reviews'][0]['claims'][0]['quote_matched'])
+        self.assertEqual(r['quote_retry_count'],1);self.assertEqual(r['quote_review_count'],0)
+        self.assertEqual(r['reviews'][0]['initial_quote_mismatch_count'],1)
+    def test_mixed_claims_keep_matched_and_separate_invalid(self):
+        review=copy.deepcopy(REVIEW);bad=self.bad_review()['claims'][0];bad['claim']='다른 미확인 주장';review['claims'].append(bad)
+        with patch('sev.text_analyzer.local_request',return_value=response(review)):r=self.analyze()
+        self.assertEqual(len(r['reviews'][0]['claims']),1);self.assertEqual(len(r['reviews'][0]['unmatched_claims']),1)
+    def test_whitespace_difference_never_counted_as_exact(self):
+        review=copy.deepcopy(REVIEW);review['claims'][0]['quote']='다른  사용자 자료가 반환되었다.'
+        with patch('sev.text_analyzer.local_request',return_value=response(review)):r=self.analyze()
+        self.assertEqual(r['reviews'][0]['claims'],[]);self.assertEqual(r['quote_review_count'],1)
+    def test_omitted_bad_claim_kept_for_review(self):
+        empty={'summary':'요약','claims':[],'questions':[]}
+        with patch('sev.text_analyzer.local_request',side_effect=[response(self.bad_review()),response(empty)]):r=self.analyze()
+        self.assertEqual(r['quote_review_count'],1);self.assertEqual(r['reviews'][0]['claims'],[])
+    def test_first_good_claim_preserved_if_retry_omits_it(self):
+        first=copy.deepcopy(REVIEW);bad=self.bad_review()['claims'][0];bad['claim']='별도 주장';first['claims'].append(bad)
+        empty={'summary':'요약','claims':[],'questions':[]}
+        with patch('sev.text_analyzer.local_request',side_effect=[response(first),response(empty)]):r=self.analyze()
+        self.assertEqual(len(r['reviews'][0]['claims']),1);self.assertEqual(r['quote_review_count'],1)
+    def test_first_of_ten_chunks_mismatch_does_not_abort(self):
+        self.path.write_text('가'*25000,encoding='utf-8')
+        bad=self.bad_review();empty={'summary':'요약','claims':[],'questions':[]}
+        with patch('sev.text_analyzer.local_request',side_effect=[response(bad),response(bad)]+[response(empty)]*9) as request:r=self.analyze()
+        self.assertEqual(len(r['reviews']),10);self.assertEqual(request.call_count,11)
+        self.assertEqual(r['reviews'][-1]['character_end'],25000);self.assertEqual(r['quote_review_count'],1)
+    def test_unmatched_rendered_as_ai_text_not_source(self):
+        with patch('sev.text_analyzer.local_request',return_value=response(self.bad_review())):r=self.analyze()
+        md=render_review(r);self.assertIn('원문 불일치 주장 — 근거로 사용 금지',md)
+        self.assertNotIn('문서에서 확인한 인용:',md);self.assertEqual(r['report_gate'],'blocked')
+    def test_invalid_retry_json_still_fails(self):
+        with patch('sev.text_analyzer.local_request',side_effect=[response(self.bad_review()),{'done':True,'response':'bad json'}]):self.assertRaises(SevError,self.analyze)
     def test_cp949(self):
         self.path.write_bytes('한글 분석 자료'.encode('cp949'))
         self.assertRaises(SevError,read_sources,self.path)
@@ -77,6 +117,12 @@ class TextTests(unittest.TestCase):
         self.assertEqual(code,0);self.assertNotIn('다른 사용자 자료가 반환되었다',out.getvalue())
         self.assertEqual(read_json(Path(self.tmp.name)/'review.json')['report_gate'],'blocked')
         self.assertIn('취약점 확인 또는 검증된 보고서가 아닙니다',(Path(self.tmp.name)/'review.md').read_text(encoding='utf-8'))
+    def test_cli_saves_quarantined_claims_with_warning(self):
+        with patch('sev.text_analyzer.local_request',return_value=response(self.bad_review())),redirect_stdout(io.StringIO()) as out:
+            code=main(['ai-text','--input',str(self.path),'--settings',str(ROOT/'config/settings.json'),'--output',str(Path(self.tmp.name)/'review.json'),'--markdown',str(Path(self.tmp.name)/'review.md')])
+        self.assertEqual(code,0);self.assertIn('인용 미확인 1건',out.getvalue());self.assertNotIn('원문에 없는 인용',out.getvalue())
+        self.assertEqual(read_json(Path(self.tmp.name)/'review.json')['quote_review_count'],1)
+        self.assertIn('원문 불일치 주장 — 근거로 사용 금지',(Path(self.tmp.name)/'review.md').read_text(encoding='utf-8'))
     def test_text_result_rejected_by_evidence_gate(self):
         e,m,a=fixture()
         with patch('sev.text_analyzer.local_request',return_value=response()):r=self.analyze()

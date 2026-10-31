@@ -57,7 +57,27 @@ def read_sources(path, encoding='utf-8-sig'):
     return sources
 
 
-def analyze_text(path, settings, encoding='utf-8-sig', progress=None):
+def checked_response(response):
+    if not isinstance(response, dict) or response.get('done') is not True or not isinstance(response.get('response'), str):
+        raise SevError('AI_INCOMPLETE', 'TXT 분석 응답이 완료되지 않았습니다.')
+    return validate(loads(response['response']), 'text_review')
+
+
+def split_claims(review, chunk, start):
+    matched, unmatched = [], []
+    for claim in review['claims']:
+        offset = chunk.find(claim['quote'])
+        if offset < 0:
+            unmatched.append(dict(claim, quote_matched=False,
+                                  issue_code='TEXT_QUOTE_MISMATCH'))
+        else:
+            matched.append(dict(claim, quote_matched=True,
+                                character_start=start+offset,
+                                character_end=start+offset+len(claim['quote'])))
+    return matched, unmatched
+
+
+def analyze_text(path, settings, encoding='utf-8-sig', progress=None, notice=None):
     validate(settings, 'settings')
     local_url(settings['ollama_url'])
     sources = read_sources(path, encoding)
@@ -67,6 +87,7 @@ def analyze_text(path, settings, encoding='utf-8-sig', progress=None):
     if total > 64:
         raise SevError('TEXT_TOO_LARGE', '한 번에 최대 64개 조각만 분석합니다. 입력 파일을 나누세요.')
     reviews = []
+    retries = 0
     for source in sources:
         for start in range(0, len(source['text']), size):
             chunk = source['text'][start:start+size]
@@ -78,23 +99,40 @@ def analyze_text(path, settings, encoding='utf-8-sig', progress=None):
                                            'notice':'부분 문서이며 인용 일치는 사실 검증을 뜻하지 않습니다.'})}
             if progress is not None:
                 progress(len(reviews)+1, total)
-            response = local_request(settings['ollama_url'], '/api/generate', payload, settings['timeout'])
-            if not isinstance(response, dict) or response.get('done') is not True or not isinstance(response.get('response'), str):
-                raise SevError('AI_INCOMPLETE', 'TXT 분석 응답이 완료되지 않았습니다.')
-            review = validate(loads(response['response']), 'text_review')
-            claims = []
-            for claim in review['claims']:
-                offset = chunk.find(claim['quote'])
-                if offset < 0:
-                    raise SevError('TEXT_QUOTE_MISMATCH', 'AI 인용이 해당 TXT 조각에 없어 결과 저장을 차단했습니다.')
-                claims.append(dict(claim, quote_matched=True,
-                                   character_start=start+offset, character_end=start+offset+len(claim['quote'])))
+            review = checked_response(local_request(settings['ollama_url'], '/api/generate', payload, settings['timeout']))
+            claims, unmatched = split_claims(review, chunk, start)
+            first_review = review
+            initial_claims, initial_unmatched = claims, unmatched
+            if unmatched:
+                retries += 1
+                if notice is not None:
+                    notice(f'인용 재확인 중: {len(reviews)+1}/{total} (추가 요청 1회)')
+                # Retry the whole chunk once; do not repair or fuzzy-match an AI quotation.
+                repair = dict(payload)
+                prompt = loads(payload['prompt'])
+                prompt['correction'] = ('이 조각의 이전 응답에 원문과 불일치하는 인용이 있었습니다. '
+                                        '요약하지 않은 짧은 연속 원문을 quote로 복사하세요. '
+                                        '일치하는 인용을 찾을 수 없는 주장은 claims에 넣지 마세요.')
+                repair['prompt'] = canonical(prompt)
+                review = checked_response(local_request(settings['ollama_url'], '/api/generate', repair, settings['timeout']))
+                claims, unmatched = split_claims(review, chunk, start)
+                final_claim_texts = {c['claim'] for c in claims + unmatched}
+                unmatched += [c for c in initial_unmatched if c['claim'] not in final_claim_texts]
+                unique = {(c['claim'], c['quote']): c for c in initial_claims + claims}
+                claims = list(unique.values())
+                if unmatched and notice is not None:
+                    notice(f'인용 미확인 {len(unmatched)}건을 분리하고 다음 조각으로 진행합니다.')
             reviews.append({'source_id':source['source_id'], 'character_start':start,
                             'character_end':start+len(chunk), 'summary':review['summary'],
-                            'claims':claims, 'questions':review['questions']})
+                            'claims':claims, 'unmatched_claims':unmatched,
+                            'initial_unmatched_claims':initial_unmatched,
+                            'initial_quote_mismatch_count':sum(chunk.find(c['quote']) < 0 for c in first_review['claims']),
+                            'questions':review['questions']})
     return {'schema_version':'1.0', 'mode':'text_review', 'run_id':str(uuid4()),
             'created_at':datetime.now(timezone.utc).isoformat(), 'status':'unverified_text_review',
             'report_gate':'blocked', 'human_review_required':True,
+            'quote_retry_count':retries,
+            'quote_review_count':sum(len(r['unmatched_claims']) for r in reviews),
             'input_hash':digest([{'source_id':s['source_id'], 'sha256':s['sha256']} for s in sources]),
             'model':settings['model'], 'sources':[{k:v for k,v in s.items() if k!='text'} for s in sources],
             'reviews':reviews}
@@ -110,6 +148,7 @@ def render_review(result):
              '**문서 요약 및 미검증 주장 정리입니다. 취약점 확인 또는 검증된 보고서가 아닙니다.**',
              '인용 일치는 문서에 해당 글이 있다는 뜻이며, 주장의 사실 여부를 입증하지 않습니다.',
              f"실행 ID: {result['run_id']}", f"입력 지문: {result['input_hash']}", '']
+    lines += [f"인용 재요청: {result.get('quote_retry_count', 0)}회 / 원문 불일치 주장: {result.get('quote_review_count', 0)}건", '']
     for index, review in enumerate(result['reviews'], 1):
         lines += [f"## {index}. {review['source_id']} / 마스킹 후 문자 {review['character_start']}~{review['character_end']}",
                   '', '### AI 요약 (미검증)', fenced(review['summary'])]
@@ -118,6 +157,12 @@ def render_review(result):
                       '문서에서 확인한 인용:', fenced(claim['quote']),
                       'AI 검토 의견 (미검증):', fenced(claim['reason']),
                       '검토 분류: ' + claim['assessment']]
+        for claim in review.get('unmatched_claims', []):
+            lines += ['', '### 원문 불일치 주장 — 근거로 사용 금지',
+                      fenced(claim['claim']),
+                      '아래 문장은 AI가 생성했으며 해당 TXT 조각에서 확인되지 않았습니다:',
+                      fenced(claim['quote']),
+                      '이 항목은 원문 인용 및 확인된 근거에서 제외했습니다. 사람의 검토가 필요합니다.']
         if review['questions']:
             lines += ['', '### 추가 확인 사항', fenced('\n'.join(review['questions']))]
         lines.append('')

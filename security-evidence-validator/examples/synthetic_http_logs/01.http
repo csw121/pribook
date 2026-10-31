@@ -1,0 +1,8 @@
+GET /api/me HTTP/1.1
+Host: synthetic.invalid
+Cookie: session=attacker-synthetic
+
+HTTP/1.1 200 Synthetic
+Content-Type: application/json
+
+{"user_id":1001}

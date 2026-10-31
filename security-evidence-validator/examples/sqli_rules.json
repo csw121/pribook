@@ -1,0 +1,1 @@
+{"schema_version":"1.0","policy":{"identity_path":"/api/me","owner_only":false,"resource_field":"/id","owner_field":"/owner_id","protected_fields":["/content"]},"candidates":[{"id":"SQLI-001","kind":"sqli","suspicious":"05","baseline":"08","parameter":"search"}]}

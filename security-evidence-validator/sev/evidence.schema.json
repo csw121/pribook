@@ -1,0 +1,92 @@
+{
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "logs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096
+          },
+          "method": {
+            "enum": [
+              "GET",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "HEAD",
+              "OPTIONS"
+            ]
+          },
+          "path": {
+            "type": "string",
+            "pattern": "^/",
+            "maxLength": 4096
+          },
+          "target_id": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "query": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4096
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "items": false,
+              "minItems": 2
+            },
+            "minItems": 0,
+            "maxItems": 10000
+          },
+          "session": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 599
+          },
+          "body": {}
+        },
+        "required": [
+          "id",
+          "method",
+          "path",
+          "target_id",
+          "query",
+          "session",
+          "status",
+          "body"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 10000
+    }
+  },
+  "required": [
+    "schema_version",
+    "logs"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

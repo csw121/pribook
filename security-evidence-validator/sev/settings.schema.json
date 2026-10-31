@@ -1,0 +1,45 @@
+{
+  "type": "object",
+  "properties": {
+    "ollama_url": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "num_ctx": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 16384
+    },
+    "temperature": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "timeout": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 600
+    },
+    "session_cookie": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  },
+  "required": [
+    "ollama_url",
+    "model",
+    "num_ctx",
+    "temperature",
+    "timeout",
+    "session_cookie"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

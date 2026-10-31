@@ -1,0 +1,8 @@
+GET /api/products?search=' HTTP/1.1
+Host: synthetic.invalid
+Cookie: session=attacker-synthetic
+
+HTTP/1.1 500 Synthetic
+Content-Type: application/json
+
+{"error":"Database query failed"}

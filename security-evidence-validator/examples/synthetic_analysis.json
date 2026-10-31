@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0",
+  "findings": [
+    {
+      "id": "IDOR-001",
+      "evidence_ids": [
+        "01",
+        "02",
+        "03",
+        "04"
+      ],
+      "classification": "confirmed",
+      "claims": [
+        {
+          "log_id": "01",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "01",
+          "field": "path",
+          "value": "/api/me"
+        },
+        {
+          "log_id": "01",
+          "field": "status",
+          "value": 200
+        },
+        {
+          "log_id": "01",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "01",
+          "field": "body/user_id",
+          "value": 1001
+        },
+        {
+          "log_id": "02",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "02",
+          "field": "path",
+          "value": "/api/me"
+        },
+        {
+          "log_id": "02",
+          "field": "status",
+          "value": 200
+        },
+        {
+          "log_id": "02",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "02",
+          "field": "body/user_id",
+          "value": 1002
+        },
+        {
+          "log_id": "03",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "03",
+          "field": "path",
+          "value": "/api/documents/7"
+        },
+        {
+          "log_id": "03",
+          "field": "status",
+          "value": 200
+        },
+        {
+          "log_id": "03",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "03",
+          "field": "body/id",
+          "value": 7
+        },
+        {
+          "log_id": "03",
+          "field": "body/owner_id",
+          "value": 1002
+        },
+        {
+          "log_id": "03",
+          "field": "body/content",
+          "value": "SYNTHETIC protected note"
+        },
+        {
+          "log_id": "04",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "04",
+          "field": "path",
+          "value": "/api/documents/7"
+        },
+        {
+          "log_id": "04",
+          "field": "status",
+          "value": 200
+        },
+        {
+          "log_id": "04",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "04",
+          "field": "body/id",
+          "value": 7
+        },
+        {
+          "log_id": "04",
+          "field": "body/owner_id",
+          "value": 1002
+        },
+        {
+          "log_id": "04",
+          "field": "body/content",
+          "value": "SYNTHETIC protected note"
+        }
+      ]
+    }
+  ]
+}

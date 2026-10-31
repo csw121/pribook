@@ -1,0 +1,1 @@
+{"schema_version":"1.0","policy":{"identity_path":"/api/me","owner_only":true,"resource_field":"/id","owner_field":"/owner_id","protected_fields":["/content"]},"candidates":[{"id":"IDOR-001","kind":"idor","requester_identity":"01","owner_identity":"02","owner_access":"03","access":"04"}]}

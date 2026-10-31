@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "findings": [
+    {
+      "id": "SQLI-001",
+      "evidence_ids": [
+        "05",
+        "08"
+      ],
+      "classification": "unknown",
+      "claims": [
+        {
+          "log_id": "05",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "05",
+          "field": "path",
+          "value": "/api/products"
+        },
+        {
+          "log_id": "05",
+          "field": "status",
+          "value": 500
+        },
+        {
+          "log_id": "05",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "05",
+          "field": "query/0/name",
+          "value": "search"
+        },
+        {
+          "log_id": "05",
+          "field": "query/0/value",
+          "value": "'"
+        },
+        {
+          "log_id": "05",
+          "field": "body/error",
+          "value": "Database query failed"
+        },
+        {
+          "log_id": "08",
+          "field": "method",
+          "value": "GET"
+        },
+        {
+          "log_id": "08",
+          "field": "path",
+          "value": "/api/products"
+        },
+        {
+          "log_id": "08",
+          "field": "status",
+          "value": 500
+        },
+        {
+          "log_id": "08",
+          "field": "target_id",
+          "value": "6c164e5b99c8dd9c75897f600357836d88ab1f42ae09a0649201a4c0ee7d77d0"
+        },
+        {
+          "log_id": "08",
+          "field": "query/0/name",
+          "value": "search"
+        },
+        {
+          "log_id": "08",
+          "field": "query/0/value",
+          "value": "apple"
+        },
+        {
+          "log_id": "08",
+          "field": "body/error",
+          "value": "Database query failed"
+        }
+      ]
+    }
+  ]
+}

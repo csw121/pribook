@@ -1,0 +1,21 @@
+﻿Security Evidence Validator 1.2.0 - Windows 시작 안내
+
+처음 한 번
+1. ZIP을 압축 해제합니다.
+2. 이 PC에 Python 3.13 이상과 Ollama를 설치합니다.
+3. Ollama를 실행하고 모델을 준비합니다: ollama pull qwen3.5:9b
+4. 01_setup.cmd를 더블클릭합니다.
+
+사용할 때
+1. 05_open_input.cmd로 연 폴더에 TXT 파일 자체를 넣습니다.
+2. 02_analyze_txt.cmd를 더블클릭합니다.
+3. 완료되면 브라우저에서 결과가 열립니다.
+
+결과 다시 보기: 03_open_results.cmd
+문제 확인: 04_check.cmd
+
+이 ZIP은 실행 환경(.venv), Ollama 모델, 실제 TXT, 분석 결과를 포함하지 않습니다.
+다른 PC에서는 .venv를 복사하지 말고 01_setup.cmd로 새로 준비하세요.
+결과는 미검증 자료 검토입니다. 인용 미확인 건수는 취약점 개수가 아닙니다.
+
+자세한 내용은 README.md를 여세요.

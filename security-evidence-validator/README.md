@@ -1,61 +1,47 @@
-# Security Evidence Validator 1.1.1
+# Security Evidence Validator 1.2.0
 
-## 1.1.0에서 업데이트
+## 다른 Windows PC에서 사용하기
 
-`Security-Evidence-Validator-update-1.1.1.zip`을 풀어 나온 `sev`, `docs`, `tests`, README 등의 파일을 기존 **main.py가 있는 폴더에 덮어쓰기**하면 됩니다. 실행 환경과 입력 TXT를 다시 만들 필요가 없습니다. 완료 메시지의 인용 미확인 건수와 결과의 별도 검토 항목을 확인하세요.
+1. ZIP을 **압축 해제**합니다. ZIP 내부에서 바로 실행하지 마세요.
+2. 해당 PC에 **Python 3.13 이상**과 **Ollama**를 설치합니다.
+3. Ollama를 실행하고 `ollama pull qwen3.5:9b`로 모델을 한 번 설치합니다. 기존에 설치했다면 다시 받을 필요가 없습니다.
+4. **`01_setup.cmd`를 더블클릭**합니다. 이 PC 전용 실행 환경·패키지·입력 폴더를 준비하고 Ollama를 확인합니다.
+5. **`05_open_input.cmd`를 더블클릭**해서 열린 폴더에 TXT 파일 자체를 넣습니다.
+6. **`02_analyze_txt.cmd`를 더블클릭**합니다. 분석이 끝나면 이번 결과를 브라우저로 엽니다.
 
-## 일반 보안 분석 TXT를 Qwen에게 읽히기
+나중에 결과만 다시 보려면 **`03_open_results.cmd`**, 실행 환경 확인은 **`04_check.cmd`**입니다.
 
-이 명령은 HTTP 형식이 아닌 동료의 분석 메모·설명문도 읽습니다. 기존 `analyze`는 HTTP 로그 전용이고, 일반 문서는 **`ai-text`**를 사용합니다. HWP는 이번 작업에서 사용하지 않습니다.
+`.venv`는 다른 PC에서 복사하지 않습니다. PC마다 `01_setup.cmd`로 만드세요. 이 ZIP에는 Python, Ollama 프로그램, 모델, 개인 자료가 들어 있지 않습니다. 설치·모델 다운로드에는 인터넷이 필요하고 자료 분석은 로컬 Ollama에서 실행합니다. 설정 파일은 `config/settings.json`입니다.
 
-### 1. 설치 (새 폴더에서 처음 한 번)
+## 설치 파일이 없다고 나오면
 
-`main.py`가 보이는 폴더에서 PowerShell을 엽니다. Python 3.13과 Ollama가 필요합니다.
+Python: https://www.python.org/downloads/windows/
 
-```powershell
-py -3.13 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
+Ollama: https://ollama.com/download/windows
 
-이미 이 폴더에 설치했다면 다시 만들 필요가 없습니다. Ollama 앱을 실행해 두고 모델이 없을 때만 내려받습니다.
+Python을 설치한 직후에는 열려 있는 창을 닫고 `01_setup.cmd`를 다시 실행하세요. Python 설치가 필요한 경우 출력되는 winget 명령도 사용할 수 있습니다. PowerShell 스크립트 활성화나 시스템 실행 정책 변경은 필요하지 않습니다.
 
-```powershell
-ollama list
-ollama pull qwen3.5:9b
-```
+## 다른 PC로 옮길 때
 
-### 2. TXT 넣기
+가장 쉬운 방법은 **배포 ZIP만 새 PC에 복사**하는 것입니다. 개인 자료를 옮길 필요가 있을 때만 `private/input_txt`의 필요한 TXT와 `output`의 결과를 별도로 직접 복사하세요. 실제 자료는 GitHub/이 채팅에 올리지 않습니다. 배포 ZIP은 개인 입력·분석 결과·venv를 제외합니다.
 
-`main.py` 옆에 `private` 폴더를 만들고 그 안에 `input_txt` 폴더를 만드세요. 분석 자료의 TXT 사본을 `private\input_txt`에 넣습니다. 이 경로는 Git에서 제외합니다. 원본 자료는 PC에 보관하고 채팅에 올리지 마세요.
+기존 PC 업데이트는 새 ZIP의 내용물을 `main.py`가 있는 기존 폴더에 덮어쓰면 됩니다. 입력·결과·실행 환경은 덮어쓰지 않습니다. 이후 `01_setup.cmd`로 패키지를 확인하세요. 기존 결과는 자동 재검증되거나 새 결과로 바뀌지 않습니다. HTML에는 생성 시각과 실행 ID를 표시합니다.
 
-### 3. 분석 실행
+## 오류가 나면
 
-```powershell
-.\.venv\Scripts\python.exe main.py doctor
-.\.venv\Scripts\python.exe main.py ai-text --input .\private\input_txt
-notepad .\output\text_review.md
-```
+- TXT가 없다는 메시지: `05_open_input.cmd`로 연 폴더에 **파일 자체**를 넣으세요. 하위 폴더는 읽지 않습니다.
+- Ollama/모델 오류: Ollama를 실행하고 `ollama pull qwen3.5:9b` 후 다시 실행합니다.
+- 메모리 부족·시간 초과: PowerShell에서 `./02_analyze_txt.cmd --context 4096`으로 실행합니다. RTX4060 8GB 노트북은 이 설정부터 확인할 수 있습니다. 두 PC의 실제 VRAM 적합성은 직접 확인해야 합니다.
+- 인코딩 오류: `./02_analyze_txt.cmd --encoding cp949` 또는 `--encoding utf-16`을 사용합니다.
+- 결과 창이 안 열림: `output/text_review.html` 파일을 직접 여세요. 경로에 공백·한글이 있어도 실행 파일은 전체 경로를 사용합니다.
+- 분석이 실패하면 이번 결과를 자동으로 열지 않습니다. 예전 결과가 남을 수 있으니 오류를 먼저 해결하세요.
 
-중간에 오류가 나오면 다음 명령으로 넘어가지 마세요. `doctor`는 Ollama 연결/모델 목록만 확인하고, `ai-text`가 실제 Qwen 추론을 요청합니다. 긴 파일은 나눠 읽으므로 시간이 걸립니다. 분석 중 조각 번호를 표시합니다.
+## 알아둘 점
 
-한 파일만 지정할 수도 있습니다.
+결과는 **TXT 요약과 미검증 주장 정리**입니다. 인용 미확인 건수는 취약점 개수가 아닙니다. 원문 불일치 항목은 근거로 쓰지 마세요. 인용을 한 번 재요청하고, 계속 불일치하는 주장은 별도 표시합니다. `blocked`는 이 모드의 기본 상태이며 원본 HTTP 증거 검증이나 최종 보고서 승인을 의미하지 않습니다.
 
-```powershell
-.\.venv\Scripts\python.exe main.py ai-text --input ".\private\input_txt\분석자료.txt"
-```
+HWP 직접 읽기/생성은 미구현입니다. 현재 DOCX 분석은 문서 구조만 다룹니다.
 
-한글 인코딩 오류가 나면 같은 명령 끝에 `--encoding cp949`를 붙입니다. UTF-16 파일은 `--encoding utf-16`을 사용합니다. 기본은 UTF-8입니다. 폴더의 TXT 파일만 읽으며 하위 폴더는 읽지 않습니다.
+파일당 2MB·최대 32파일·전체 64조각, context에 따라 최대 2500문자로 나눠 읽습니다. 민감 키 일부는 마스킹하지만 모든 개인정보를 탐지하지는 않습니다. 출력도 로컬 민감자료로 보관하세요.
 
-### 4. 결과 확인
-
-- `output/text_review.md`: 메모장으로 읽는 한국어 검토 결과.
-- `output/text_review.json`: 파일별 지문·파일명·AI 결과·마스킹 후 원문 인용 위치.
-- 결과는 **문서 요약/미검증 주장 정리**입니다. 인용 일치는 그 문장이 TXT에 존재한다는 뜻이며, 취약점 성공을 입증하지 않습니다.
-- 이 결과로 기존 `verify`/`report`를 실행하지 마세요. HTTP 증거 검증 결과와 다른 형식이며 보고서 게이트는 항상 `blocked`입니다.
-- 원본 HTTP 요청·응답과 정책이 나중에 확보되면 별도 증거 검증 흐름을 사용합니다.
-
-기본 연결: `http://127.0.0.1:11434`, 모델 `qwen3.5:9b`, context 8192, temperature 0.2, Thinking OFF. `config/settings.json`에서 조정합니다. 인증 헤더·쿠키·일부 비밀번호/토큰 패턴을 보내기 전에 가리지만 모든 개인정보를 탐지하지는 않습니다. 결과 파일도 민감자료로 관리하세요.
-
-파일당 2MB, 파일 32개, 전체 최대 64조각입니다. 한 조각은 context에 따라 최대 2500문자이며 경계에 걸친 문맥은 불완전할 수 있습니다. AI 요약·검토 의견은 자동 사실 검증되지 않습니다. 원문에 없는 인용이면 해당 조각을 한 번 더 요청합니다. 재요청에도 원문과 다르거나 주장이 사라지면 원문 불일치 주장으로 분리해 저장하고 다음 조각을 분석합니다. 원문과 일치한 인용만 문서 인용에 포함되며, 틀린 인용을 수정하거나 유사 문자열로 통과시키지 않습니다. 잘못된 JSON·스키마·Ollama 연결 오류는 여전히 실행을 중단합니다. 실패 시 이전 실행 결과가 남을 수 있으니 새 완료 메시지와 결과 실행 ID를 확인하세요.
-
-[HTTP 증거 검증과 기타 기능](docs/REFERENCE.md) · [검증 기록](docs/VALIDATION.md) · [DOCX/한글 처리](docs/DOCUMENTS.md)
+[명령어와 HTTP 증거 검증](docs/REFERENCE.md) · [개발 및 배포 안내](docs/PORTABLE.md) · [검증 기록](docs/VALIDATION.md)

@@ -20,15 +20,19 @@ def parser():
         else:s.add_argument('--verification',default='output/verification.json')
         if name=='report':s.add_argument('--output-dir',default='output/report');s.add_argument('--docx',action='store_true')
     s=sub.add_parser('document-analyze');s.add_argument('--input',required=True);s.add_argument('--output',default='output/document_structure.json');s.add_argument('--include-local-text',action='store_true')
-    t=sub.add_parser('ai-text');t.add_argument('--input',required=True);t.add_argument('--settings',default='config/settings.json');t.add_argument('--encoding',choices=['utf-8-sig','utf-16','cp949'],default='utf-8-sig');t.add_argument('--output',default='output/text_review.json');t.add_argument('--markdown',default='output/text_review.md')
+    t=sub.add_parser('ai-text');t.add_argument('--input',required=True);t.add_argument('--settings',default='config/settings.json');t.add_argument('--encoding',choices=['utf-8-sig','utf-16','cp949'],default='utf-8-sig');t.add_argument('--output',default='output/text_review.json');t.add_argument('--markdown',default='output/text_review.md');t.add_argument('--html',default='output/text_review.html');t.add_argument('--context',type=int,choices=[4096,8192,16384])
     s=sub.add_parser('serve');s.add_argument('--port',type=int,default=8765)
     return p
 
 def execute(args):
     if args.command=='ai-text':
-        from .text_analyzer import analyze_text,render_review
-        result=analyze_text(args.input,read_json(args.settings),args.encoding,progress=lambda current,total: print(f'TXT 분석 중: {current}/{total}',flush=True),notice=lambda message: print(message,flush=True))
-        write_json(args.output,result);write_text(args.markdown,render_review(result))
+        from .text_analyzer import analyze_text,render_review,render_review_html
+        settings=read_json(args.settings)
+        validate(settings,'settings')
+        if args.context is not None:
+            settings=dict(settings,num_ctx=args.context)
+        result=analyze_text(args.input,settings,args.encoding,progress=lambda current,total: print(f'TXT 분석 중: {current}/{total}',flush=True),notice=lambda message: print(message,flush=True))
+        write_json(args.output,result);write_text(args.markdown,render_review(result));write_text(args.html,render_review_html(result))
         print(f"TXT {len(result['sources'])}개 / {len(result['reviews'])}개 조각 검토 완료 / 인용 미확인 {result['quote_review_count']}건. 결과는 미검증 자료이며 보고서 게이트는 blocked입니다.");return 0
     if args.command=='doctor':
         settings=validate(read_json(args.settings),'settings')
@@ -36,7 +40,7 @@ def execute(args):
         tags=local_request(settings['ollama_url'],'/api/tags',timeout=min(settings['timeout'],10))
         if not isinstance(tags,dict) or not isinstance(tags.get('models'),list):raise SevError('OLLAMA_TAGS_INVALID','모델 목록이 올바르지 않습니다.')
         if not any(isinstance(m,dict) and m.get('name')==settings['model'] for m in tags['models']):raise SevError('MODEL_MISSING','로컬 Ollama에 설정 모델이 필요합니다.')
-        print('Ollama 연결 및 모델 설치 확인; 실제 추론은 ai-analyze로 확인하세요.');return 0
+        print('Ollama 연결 및 모델 설치 확인; TXT 추론은 ai-text, HTTP 증거 추론은 ai-analyze로 실행하세요.');return 0
     if args.command=='analyze':
         settings=validate(read_json(args.settings),'settings');data=analyze_directory(args.input,args.pattern,settings['session_cookie'])
         validate(data,'evidence');write_json(args.output,data);print(f"로그 {len(data['logs'])}개 정규화 완료. 결과는 로컬 민감자료로 보관하세요.");return 0

@@ -1,5 +1,6 @@
 """일반 TXT 자료의 로컬 AI 검토. 원본 HTTP 증거 검증 및 보고서 승인을 대체하지 않음."""
 import hashlib
+import html
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -147,6 +148,7 @@ def render_review(result):
     lines = ['# TXT 보안 자료 검토', '',
              '**문서 요약 및 미검증 주장 정리입니다. 취약점 확인 또는 검증된 보고서가 아닙니다.**',
              '인용 일치는 문서에 해당 글이 있다는 뜻이며, 주장의 사실 여부를 입증하지 않습니다.',
+             f"생성 시각(UTC): {result.get('created_at', '알 수 없음')}",
              f"실행 ID: {result['run_id']}", f"입력 지문: {result['input_hash']}", '']
     lines += [f"인용 재요청: {result.get('quote_retry_count', 0)}회 / 원문 불일치 주장: {result.get('quote_review_count', 0)}건", '']
     for index, review in enumerate(result['reviews'], 1):
@@ -167,3 +169,16 @@ def render_review(result):
             lines += ['', '### 추가 확인 사항', fenced('\n'.join(review['questions']))]
         lines.append('')
     return '\n'.join(lines)
+
+
+def render_review_html(result):
+    # Self-contained and escaped: document/model text never becomes active HTML.
+    body = html.escape(render_review(result))
+    return ('<!doctype html><html lang="ko"><head><meta charset="utf-8">'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            '<meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; base-uri \'none\'">'
+            '<title>TXT 검토 결과 — 미검증</title>'
+            '<style>body{max-width:1100px;margin:32px auto;padding:0 20px;'
+            'font-family:system-ui,sans-serif;line-height:1.7}pre{white-space:pre-wrap;'
+            'overflow-wrap:anywhere;font:inherit}</style></head><body><pre>'
+            + body + '</pre></body></html>')

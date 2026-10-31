@@ -1,4 +1,5 @@
 b2fcbafdfb2deafe1a57795845d704dd756a12acb75bf9e1d88b8d742c12e648  Security-Evidence-Validator-1.1.0.zip
 ad0aa56950a3f02a5f3ef9dc13d28345e21faea77e1c44a97ab0209e3b3c5a43  Security-Evidence-Validator-1.1.1.zip
+f42d1c4f9f7defa9c02e426663af962dddf958623f24189fd4fcbf5bf263382c  Security-Evidence-Validator-1.2.0-Windows.zip
 af59a00ecfeef6863fb3f00134a3bfef3ec7992d504423d82a764b70bd67be5c  Security-Evidence-Validator-recovered-1.0.1.zip
 4e3e6ef6fe596513ee85641d6f49239aefe0dfcb07ca3030793d95b0dbc0ec54  Security-Evidence-Validator-update-1.1.1.zip

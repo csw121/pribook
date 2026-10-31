@@ -113,13 +113,13 @@ class TextTests(unittest.TestCase):
         request.assert_not_called()
     def test_cli_writes_separate_review_files(self):
         with patch('sev.text_analyzer.local_request',return_value=response()),redirect_stdout(io.StringIO()) as out:
-            code=main(['ai-text','--input',str(self.path),'--settings',str(ROOT/'config/settings.json'),'--output',str(Path(self.tmp.name)/'review.json'),'--markdown',str(Path(self.tmp.name)/'review.md')])
+            code=main(['ai-text','--input',str(self.path),'--settings',str(ROOT/'config/settings.json'),'--output',str(Path(self.tmp.name)/'review.json'),'--markdown',str(Path(self.tmp.name)/'review.md'),'--html',str(Path(self.tmp.name)/'review.html')])
         self.assertEqual(code,0);self.assertNotIn('다른 사용자 자료가 반환되었다',out.getvalue())
         self.assertEqual(read_json(Path(self.tmp.name)/'review.json')['report_gate'],'blocked')
         self.assertIn('취약점 확인 또는 검증된 보고서가 아닙니다',(Path(self.tmp.name)/'review.md').read_text(encoding='utf-8'))
     def test_cli_saves_quarantined_claims_with_warning(self):
         with patch('sev.text_analyzer.local_request',return_value=response(self.bad_review())),redirect_stdout(io.StringIO()) as out:
-            code=main(['ai-text','--input',str(self.path),'--settings',str(ROOT/'config/settings.json'),'--output',str(Path(self.tmp.name)/'review.json'),'--markdown',str(Path(self.tmp.name)/'review.md')])
+            code=main(['ai-text','--input',str(self.path),'--settings',str(ROOT/'config/settings.json'),'--output',str(Path(self.tmp.name)/'review.json'),'--markdown',str(Path(self.tmp.name)/'review.md'),'--html',str(Path(self.tmp.name)/'review.html')])
         self.assertEqual(code,0);self.assertIn('인용 미확인 1건',out.getvalue());self.assertNotIn('원문에 없는 인용',out.getvalue())
         self.assertEqual(read_json(Path(self.tmp.name)/'review.json')['quote_review_count'],1)
         self.assertIn('원문 불일치 주장 — 근거로 사용 금지',(Path(self.tmp.name)/'review.md').read_text(encoding='utf-8'))
